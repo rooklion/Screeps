@@ -13,7 +13,7 @@ module.exports = {
                     var walls = creep.room.find(FIND_STRUCTURES,
                         { filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART });
 
-                    walls.sort((a, b) => _(a.hits / a.hitsMax) - (b.hits / b.hitsMax));
+                    walls.sort((a, b) => (a.hits / a.hitsMax) - (b.hits / b.hitsMax));
 
                     let target = walls[0];
 
