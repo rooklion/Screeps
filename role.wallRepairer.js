@@ -39,7 +39,7 @@ module.exports = {
                         creep.memory.objectAction = 'repair';
                         if (creep.repair(target) == ERR_NOT_IN_RANGE) {
                             //creep.moveTo(target);
-                            creep.moveToTest(target, { range: 1 });
+                            creep.moveToTest(target, { range: 3 });
                         }
 
                     }
