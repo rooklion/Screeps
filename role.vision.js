@@ -23,18 +23,8 @@ module.exports = {
         //creep will simply keep moving to his destination and sit in the room.
 
         //if we're at the edge of the room, move one step in
-        if (creep.room.name == creep.memory.target) {
-            if (creep.pos.x == 0) {
-                creep.move(RIGHT);
-                return;
-            } else if (creep.pos.x == 49) {
-                creep.move(LEFT);
-                return;
-            } else if (creep.pos.y == 0) {
-                creep.move(BOTTOM);
-                return;
-            } else if (creep.pos.y == 49) {
-                creep.move(TOP);
+        if (creep.room.name == creep.room.target) {
+            if (creep.moveFromRoomEdge()) {
                 return;
             }
         }

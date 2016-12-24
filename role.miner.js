@@ -2,9 +2,9 @@ require('prototype.creep')();
 
 module.exports = {
     run: function (creep) {
-        if (!(creep.manageRoomTarget())) {
+        //if (!(creep.manageRoomTarget())) {
             let result = creep.handleMovementCodes(creep.checkMovement());
-            if (result != OK) {
+            if (result != -200 && result != -203) {
                 let source = Game.getObjectById(creep.memory.sourceId);
                 creep.memory.objectTarget = source.id;
                 creep.memory.objectAction = 'mine';
@@ -23,6 +23,6 @@ module.exports = {
                     creep.moveToTest(container.pos, { range: 0 });
                 }
             }
-        }
+        //}
     }
 };

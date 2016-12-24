@@ -1,6 +1,6 @@
 module.exports = function () {
     StructureSpawn.prototype.createCustomCreep =
-        function (energy, roleName) {
+        function (energy, roleName, target) {
             var energyUsed = 0;
             var numParts = Math.floor(energy / 250);
             var body = [];
@@ -21,25 +21,28 @@ module.exports = function () {
             return this.createCreep(body, undefined, {
                 role: roleName,
                 energyUsed: energyUsed,
-                working: false
+                working: false,
+                target: target
             });
         };
 
     StructureSpawn.prototype.createRepairer =
-        function () {
+        function (target) {
             return this.createCreep([WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE], undefined, {
                 role: 'repairer',
                 energyUsed: 500,
-                working: false
+                working: false,
+                target: target
             });
         };
 
     StructureSpawn.prototype.createBuilder =
-        function () {
+        function (target) {
             return this.createCreep([WORK, CARRY, CARRY, CARRY, MOVE, MOVE], undefined, {
                 role: 'builder',
                 energyUsed: 350,
-                working: false
+                working: false,
+                target: target
             });
         };
 
@@ -121,6 +124,7 @@ module.exports = function () {
 
     StructureSpawn.prototype.createMiner =
         function (sourceId) {
+
             return this.createCreep([WORK, WORK, WORK, WORK, WORK, MOVE], undefined, {
                 role: 'miner',
                 energyUsed: 550,
@@ -129,7 +133,7 @@ module.exports = function () {
         }
 
     StructureSpawn.prototype.createCarry =
-        function (energy, roleName) {
+        function (energy, roleName, target) {
             var energyUsed = 0;
             var numParts = Math.floor(energy / 150);
             var body = [];
@@ -146,7 +150,8 @@ module.exports = function () {
             return this.createCreep(body, undefined, {
                 role: roleName,
                 energyUsed: energyUsed,
-                working: false
+                working: false,
+                target: target
             });
         };
 
@@ -161,5 +166,30 @@ module.exports = function () {
             })
         }
 
+//TODO: merge this with createCarry and just add opts to the arguments
+        StructureSpawn.prototype.createLDHauler =
+            function (container, homePos) {
+                var energyUsed = 550;
+                // var numParts = Math.floor(energy / 150);
+                // var body = [];
+                // for (let i = 0; i < numParts * 2; i++) {
+                //     body.push(CARRY);
+                //     energyUsed += 50;
+                // }
+                // //should double up the move parts
+                // for (let i = 0; i < numParts; i++) {
+                //     body.push(MOVE);
+                //     energyUsed += 50;
+                // }
+
+                // return this.createCreep(body, undefined, {
+                return this.createCreep([CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE], undefined, {
+                    role: 'LDHauler',
+                    energyUsed: energyUsed,
+                    working: false,
+                    container: container,
+                    homePos: homePos
+                });
+            };
 
 };

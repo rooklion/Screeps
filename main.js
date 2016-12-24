@@ -1,5 +1,6 @@
 require('prototype.spawn')();
 require('prototype.link')();
+require('prototype.room')();
 
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
@@ -15,6 +16,8 @@ var roleGather = require('role.gather');
 var roleVision = require('role.vision');
 var roleReserver = require('role.reserver');
 var roleCTARefuge = require('role.CTARefuge');
+var roleLDHauler = require('role.LDHauler');
+
 
 
 //var link = require('link');
@@ -24,7 +27,7 @@ var HOME = 'W8N3';
 var MAX_OVERFLOW_CREEPS = 4;
 var tickCounter = 0;
 
-profiler.enable();
+//profiler.enable();
 module.exports.loop = function () {
 	profiler.wrap(function() {
 
@@ -121,6 +124,9 @@ module.exports.loop = function () {
 			}
 			else if (creep.memory.role == 'CTARefuge') {
 				roleCTARefuge.run(creep);
+			}
+			else if (creep.memory.role == 'LDHauler') {
+				roleLDHauler.run(creep);
 			}
 		}
 
@@ -219,15 +225,15 @@ module.exports.loop = function () {
 	for (let tar in roomTargets) {
 		//if this room is in the visibilities list, otherwise .find will return an error
 		if (Memory.roomVisibilities.indexOf(tar) != -1) {
-			let roads = Game.rooms[creep.memory.target].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD);
+			let roads = Game.rooms[tar].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD);
 			//iterate through the roads to find one in need of health
 			for (let r of roads) {
 				//if the health is below a given percentage (50% at the moment)
 				if ((r.hits / r.hitsMax) <= 0.5) {
 					//find out if there is already an emergency repairer spawned for this room
-					if (!_.some(_.filter(Game.creeps, (c) => c.memory.role == 'repairer' && c.memory.target == creep.memory.target))) {
+					if (!_.some(_.filter(Game.creeps, (c) => c.memory.role == 'repairer' && c.memory.target == tar))) {
 						//no repairer found, create one
-						name = spawn.createEmergencyRepairer(energy, creep.memory.target);
+						name = spawn.createEmergencyRepairer(energy, tar);
 						//console.log(name);
 						//is it successful?
 						if (_.isString(name) && Game.creeps[name] != undefined) {
@@ -261,6 +267,7 @@ module.exports.loop = function () {
 		}
 	}
 	else {
+		//TODO: use the cached source results here
 		let sources = spawn.room.find(FIND_SOURCES);
 		for (let source of sources) {
 			if (!_.some(creepsInRoom, (c) => c.memory.role == 'miner' && c.memory.sourceId == source.id)) {
@@ -278,11 +285,85 @@ module.exports.loop = function () {
 
 	//check for need of vision creeps
 	if (name == undefined) {
+		//Need vision in rooms targetted by LDH
 		let LDH = _.filter(Game.creeps, (c) => c.memory.role == 'longDistanceHarvester');
 		for (let name in LDH) {
 			if (!(_.some(Game.creeps, (c) => c.memory.role == 'vision' && c.memory.target == LDH[name].memory.target))) {
 				name = spawn.createVision(LDH[name].memory.target);
 				break;
+			}
+		}
+		//Need vision in rooms setup for LD Mining
+		for (let index in spawn.room.memory.LDMineTargets) {
+			let room = spawn.room.memory.LDMineTargets[index];
+			if (!(_.some(Game.creeps, (c) => c.memory.role == 'vision' && c.memory.target == room))) {
+				name = spawn.createVision(room);
+				break;
+			}
+		}
+	}
+
+
+	//Logic for creating Long Distance Miners, Haulers, and Builders
+	for (let index in spawn.room.memory.LDMineTargets) {
+		let room = spawn.room.memory.LDMineTargets[index];
+		if (Memory.roomVisibilities.indexOf(room) > -1) {
+			//let remoteCreeps = Game.rooms[room].find(FIND_MY_CREEPS);
+			//let sources = Game.rooms[room].getSources();
+			let sources = Game.rooms[room].find(FIND_SOURCES);
+			//check for miners
+			for (let s in sources) {
+				//let source = Game.getObjectById(s.id);
+				let source = Game.getObjectById(sources[s].id);
+				if (!_.some(Game.creeps, (c) => c.memory.role == 'miner' && c.memory.sourceId == source.id)) {
+					let containers = source.pos.findInRange(FIND_STRUCTURES, 1, {
+						filter: (s) => s.structureType == STRUCTURE_CONTAINER
+					});
+					if (containers.length > 0) {
+						name = spawn.createMiner(source.id, room);
+						break;
+					}
+				}
+			}
+
+			if (name == undefined) {
+				//check for construction sites: send builders if needed
+				let conSites = Game.rooms[room].find(FIND_CONSTRUCTION_SITES);
+				let containers = Game.rooms[room].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
+				//if there are containers in the room, the minimum builders is 1.  Otherwise, we'll use 2 to speed the process up
+				//  numberofBuilders <= 0 ensures 1 builder, <= 1 ensures 2 builders
+				if (conSites.length > 0 && _.filter(Game.creeps, (c) => c.memory.role == 'builder' && c.memory.target == room).length <= (containers.length > 0 ? 0 : 1)) {
+					if (spawn.room.energyCapacityAvailable >= 350) {
+						name = spawn.createBuilder(room);
+					} else {
+						name = spawn.createCustomCreep(spawn.room.energyCapacityAvailable, 'builder', room);
+					}
+				}
+			}
+
+			if (name == undefined) {
+				//check for Haulers
+				for (let s in sources) {
+					//let source = Game.getObjectById(s.id);
+					let source = Game.getObjectById(sources[s].id);
+					//check if we have miners spawned for the source (we should... they get checked before this)
+					if (_.some(Game.creeps, (c) => c.memory.role == 'miner' && c.memory.sourceId == source.id)) {
+						let containers = source.pos.findInRange(FIND_STRUCTURES, 1, {
+							filter: (s) => s.structureType == STRUCTURE_CONTAINER
+						});
+						//if containers exist next to the source
+						if (containers.length > 0) {
+							for (let c in containers) {
+								//let container = Game.getObjectById(containers[c].id);
+								let container = containers[c];
+								//check if we don't have Haulers spawned for each container
+								if (!_.some(Game.creeps, (c) => c.memory.role == "LDHauler" && c.memory.container == container.id)) {
+									name = spawn.createLDHauler(containers[c].id, spawn.room.storage ? spawn.room.storage.pos : spawn.pos);
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -312,7 +393,7 @@ module.exports.loop = function () {
 
 	//check for need of reserver creeps
 	if (name == undefined) {
-		let LDH = _.filter(Game.creeps, (c) => c.memory.role == 'longDistanceHarvester');
+		let LDH = _.filter(Game.creeps, (c) => c.memory.role == 'longDistanceHarvester' || c.memory.role == 'LDHauler');
 		for (let name in LDH) {
 			if (!(_.some(Game.creeps, (c) => c.memory.role == 'reserver' && c.memory.target == LDH[name].memory.target))) {
 				name = spawn.createReserver(LDH[name].memory.target);
@@ -358,11 +439,11 @@ module.exports.loop = function () {
 			else {
 				//If any construction sites and no builder, spawn one
 				//Builder on demand
-				let conSite = spawn.room.find(FIND_CONSTRUCTION_SITES);
+				let conSites = spawn.room.find(FIND_CONSTRUCTION_SITES);
 				let containers = spawn.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
 				//if there are containers in the room, the minimum builders is 1.  Otherwise, we'll use 2 to speed the process up
 				//  numberofBuilders <= 0 ensures 1 builder, <= 1 ensures 2 builders
-				if (conSite.length > 0 && thisRoom.numberOfBuilders <= (containers.length > 0 ? 0 : 1)) {
+				if (conSites.length > 0 && thisRoom.numberOfBuilders <= (containers.length > 0 ? 0 : 1)) {
 					if (spawn.room.energyCapacityAvailable >= 350) {
 						name = spawn.createBuilder();
 					} else {
@@ -388,7 +469,7 @@ module.exports.loop = function () {
 				}
 			}
 			else if (thisRoom.numberOfWallRepairers < spawn.memory.minWR) {
-				name = spawn.createCustomCreep(energy, 'wallRepairer');
+				name = spawn.createCustomCreep(energy, 'wallRepairer', spawn.room.name);
 			}
 			else if (thisRoom.numberOfScoopers < spawn.memory.minScoop) {
 				name = spawn.createCarry(300, 'scooper');
@@ -481,5 +562,5 @@ module.exports.loop = function () {
 }
 
 
-});
+});  //end profiler wrap
 }

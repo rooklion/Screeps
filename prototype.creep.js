@@ -25,6 +25,7 @@ module.exports = function () {
                 return true;
             }
             else {
+                this.moveFromRoomEdge();
                 return false;
             }
         }
@@ -497,6 +498,9 @@ module.exports = function () {
                             let container = Game.getObjectById(this.memory.containerId);
                             if (this.pos.isEqualTo(container)) {
                                result = this.harvest(target);
+                               if (result == OK) {
+                                   result = HARVEST_OK;
+                               }
                             } else {
                                 this.moveToTest(container.pos, { range: 0 });
                             }
@@ -578,6 +582,24 @@ module.exports = function () {
         }
         return result;
 
+    }
+
+    Creep.prototype.moveFromRoomEdge =
+    function () {
+        if (this.pos.x == 0) {
+            this.move(RIGHT);
+            return true;
+        } else if (this.pos.x == 49) {
+            this.move(LEFT);
+            return true;
+        } else if (this.pos.y == 0) {
+            this.move(BOTTOM);
+            return true;
+        } else if (this.pos.y == 49) {
+            this.move(TOP);
+            return true;
+        }
+        return false;
     }
 
     /**
