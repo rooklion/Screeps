@@ -16,6 +16,10 @@ var roleVision = require('role.vision');
 var roleReserver = require('role.reserver');
 var roleCTARefuge = require('role.CTARefuge');
 
+console.log("test");
+
+
+
 //var link = require('link');
 var profiler = require('screeps-profiler');
 
