@@ -220,8 +220,11 @@ module.exports.loop = function () {
 			//console.log("new target: " + creep.memory.target);
 		}
 	}
-
-	spawn.room.memory.LDMineTargets.forEach((room) => roomTargets.push(room));
+	spawn.room.memory.LDMineTargets.forEach( function(room) {
+		if (roomTargets.indexOf(room) == -1) {
+			roomTargets.push(room);
+		}
+	});
 
 	//iterate through the room targets
 	for (let index in roomTargets) {
