@@ -7,6 +7,8 @@ module.exports = {
             let hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
             if (hostiles.length > 0) {
                 roleCTARefuge.callCTA(creep.room.name, hostiles);
+                roleCTARefuge.run(creep);
+                return;
             }
         } else {
             //we will run away until ticks == 0

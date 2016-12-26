@@ -221,23 +221,26 @@ module.exports.loop = function () {
 		}
 	}
 
+	spawn.room.memory.LDMineTargets.forEach((room) => roomTargets.push(room));
+
 	//iterate through the room targets
-	for (let tar in roomTargets) {
+	for (let index in roomTargets) {
+		let target = roomTargets[index];
 		//if this room is in the visibilities list, otherwise .find will return an error
-		if (Memory.roomVisibilities.indexOf(tar) != -1) {
-			let roads = Game.rooms[tar].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD);
+		if (Memory.roomVisibilities.indexOf(target) != -1) {
+			let roads = Game.rooms[target].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD);
 			//iterate through the roads to find one in need of health
 			for (let r of roads) {
 				//if the health is below a given percentage (50% at the moment)
 				if ((r.hits / r.hitsMax) <= 0.5) {
 					//find out if there is already an emergency repairer spawned for this room
-					if (!_.some(_.filter(Game.creeps, (c) => c.memory.role == 'repairer' && c.memory.target == tar))) {
+					if (!_.some(_.filter(Game.creeps, (c) => c.memory.role == 'repairer' && c.memory.target == target))) {
 						//no repairer found, create one
-						name = spawn.createEmergencyRepairer(energy, tar);
+						name = spawn.createEmergencyRepairer(energy, target);
 						//console.log(name);
 						//is it successful?
 						if (_.isString(name) && Game.creeps[name] != undefined) {
-							console.log("Sending emergency repairer to : " + creep.memory.target);
+							console.log("Sending emergency repairer to : " + target);
 							//one was found, now to break the loop
 							boolSendRepairer = true;
 							break;
@@ -347,6 +350,8 @@ module.exports.loop = function () {
 					break;
 				}
 
+
+//TODO: add logic to make LDHauler deposit in remote links as well
 				if (name == undefined) {
 					//check for Haulers
 					for (let s in sources) {

@@ -10,6 +10,8 @@ module.exports = {
                 let hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
                 if (hostiles.length > 0) {
                     roleCTARefuge.callCTA(creep.room.name, hostiles);
+                    roleCTARefuge.run(creep);
+                    return;
                 }
             }
         } else {
@@ -18,6 +20,7 @@ module.exports = {
             delete creep.memory.objectTarget;
             delete creep.memory.objectAction;
             roleCTARefuge.run(creep);
+            return;
         }
 
         //LDH will act as scoopers in their target room
