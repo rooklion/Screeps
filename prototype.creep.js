@@ -12,7 +12,10 @@ var MOVEMENT_OK = -200,
     UPGRADE_OK = -204;
 
 //Number of ticks a creep will wait for movement before recalculating
-var MAX_IDLE_TIME = 3;
+var MAX_STUCK_TIME = 3;
+
+//Number of ticks before a creep will just move in a random direction
+var MAX_IDLE_TIME = 10;
 
 module.exports = function () {
 
@@ -24,7 +27,13 @@ module.exports = function () {
                 this.moveToTest(this.pos.findClosestByRange(exit));
                 return true;
             }
-            else {
+            else if (this.memory.target == undefined && this.memory.homePos != undefined) {
+                if (this.room.name != this.memory.homePos.roomName) {
+                    let exit = this.room.findExitTo(this.memory.homePos.roomName);
+                    this.moveToTest(this.pos.findClosestByRange(exit));
+                    return true;
+                }
+            } else {
                 this.moveFromRoomEdge();
                 return false;
             }
@@ -184,66 +193,6 @@ module.exports = function () {
             }
         }
 
-    /*Creep.prototype.moveToTest =
-        function (arg1, arg2, opts) {
-            var [x,y,roomName] = utils.fetchXYArguments(arg1, arg2);
-            roomName = roomName || this.pos.roomName;
-            if(_.isUndefined(x) || _.isUndefined(y)) {
-                return C.ERR_INVALID_TARGET;
-            }
-
-            var targetPos = new RoomPosition(x,y,roomName);
-
-            if(_.isObject(arg1)) {
-                opts = _.clone(arg2);
-            }
-            opts = opts || {};
-
-
-                // We need to set the defaults costs higher so that we
-                // can set the road cost lower in `roomCallback`
-            opts.plainCost = 2;
-            opts.swampCost = 10;
-
-            opts.roomCallback = function (roomName) {
-
-                let room = Game.rooms[roomName];
-                // In this example `room` will always exist, but since PathFinder
-                // supports searches which span multiple rooms you should be careful!
-                if (!room) return;
-                let costs = new PathFinder.CostMatrix;
-
-                room.find(FIND_STRUCTURES).forEach(function (structure) {
-                    if (structure.structureType === STRUCTURE_ROAD) {
-                        // Favor roads over plain tiles
-                        costs.set(structure.pos.x, structure.pos.y, 1);
-                    } else if (structure.structureType !== STRUCTURE_CONTAINER &&
-                               (structure.structureType !== STRUCTURE_RAMPART ||
-                                !structure.my)) {
-                        // Can't walk through non-walkable buildings
-                        costs.set(structure.pos.x, structure.pos.y, 0xff);
-                    }
-                });
-
-                // Avoid creeps in the room
-                room.find(FIND_CREEPS).forEach(function (creep) {
-                    costs.set(creep.pos.x, creep.pos.y, 0xff);
-                });
-
-                return costs;
-            }
-
-            var targetPos = new RoomPosition(x, y, roomName);
-            //if (this.memory.role == 'builder') {
-                //console.log(this.name);
-                //console.log(targetPos);
-            //}
-
-            let res = this.moveToByPathFinder(targetPos, opts);
-
-            //return this.moveTo(arg1, arg2, arg3);
-        }*/
-
     Creep.prototype.moveToTest =
         function (arg1, arg2, opts) {
             var [x,y,roomName] = utils.fetchXYArguments(arg1, arg2);
@@ -294,15 +243,8 @@ module.exports = function () {
             }
 
             var targetPos = new RoomPosition(x, y, roomName);
-            //if (this.memory.role == 'builder') {
-            //console.log(this.name);
-            //console.log(targetPos);
-            //}
-
-            //let res = this.moveToByPathFinder(targetPos, opts);
             let res = this.moveTo(targetPos, opts);
             return res;
-            //return this.moveTo(arg1, arg2, arg3);
         }
 
     Creep.prototype.findClosestByPathFinder = function (targets, opts) {
@@ -334,12 +276,6 @@ module.exports = function () {
             }
             //results.push(result);
         }
-        //var cheapest = results[0];
-        //for (r of results) {
-        //    if (r.cost < cheapest.cost) {
-        //        cheapest = r;
-        //    }
-        //}
         if (cheapest) {
             return cheapest.target;
         }
@@ -347,55 +283,6 @@ module.exports = function () {
             return undefined;
         }
     }
-
-    /*Creep.prototype.moveToByPathFinder = function (targetPos, opts) {
-        if (!_.isObject(opts)) {
-            return ERR_INVALID_ARGS;
-        }
-        if (!this.my) {
-            return ERR_NOT_OWNER;
-        }
-        if (this.spawning) {
-            return ERR_BUSY
-        }
-        if (this.fatigue > 0) {
-            return ERR_TIRED
-        }
-        //if (!this.hasActiveBodyparts(MOVE)) {
-        if (this.getActiveBodyparts(MOVE) < 1) {
-            return ERR_NO_BODYPART;
-        }
-
-
-        const reusePath = _.isObject(this.memory) && ('reusePath' in opts ? opts.reusePath : 3);
-
-        //console.log(goals);
-        let result = PathFinder.search(this.pos, targetPos, opts);
-        const path = result.path;
-        //const path = findPathPathFinder(this.pos, targetPos, opts);
-
-        //const path = result.path;
-        //const dest = path[path.length - 1];
-
-
-        if (reusePath) {
-            this.memory._move = {
-                dest: {
-                    x: targetPos.x,
-                    y: targetPos.y,
-                    room: targetPos.roomName,
-                },
-                time: Game.time,
-                path: Room.serializePath(path),
-                room: this.pos.roomName,
-            }
-        }
-
-        return this.moveByPath(path);
-
-        //var destRP = path[path.length - 1];
-
-    }*/
 
     Creep.prototype.checkMovement = function () {
         if (this.memory.oldPos.x != this.pos.x || this.memory.oldPos.y != this.pos.y || this.memory.oldPos.roomName != this.pos.roomName) {
@@ -407,10 +294,16 @@ module.exports = function () {
             this.memory.idleTime++;
         }
 
-        if (this.memory.idleTime >= MAX_IDLE_TIME) {
+        if (this.memory.idleTime >= MAX_STUCK_TIME) {
             this.memory.idleTime = 0;
             delete this.memory._move;
         }
+
+        // if (this.memory.idleTime >= MAX_IDLE_TIME) {
+        //     this.memory.idleTime = 0;
+        //     delete this.memory._move;
+        //
+        // }
 
 
         var _move = this.memory._move;
@@ -456,16 +349,6 @@ module.exports = function () {
                 if (this.memory.objectAction) {
                     switch (this.memory.objectAction) {
                         case 'store':
-                            //if (creep.memory.role == 'lorry') {
-                            //    boolIncludeSpawner = true;
-                            //    boolNoContainers = true;
-                            //} else if (creep.memory.role == 'harvester') {
-                            //    boolIncludeSpawner = true;
-                            //    boolNoContainers = false;
-                            //} else if (creep.memory.role == 'longDistanceHarvester') {
-                            //    boolIncludeSpawner = false;
-                            //    boolNoContainers = false;
-                            //}
                             var boolIncludeSpawner = (this.memory.role == 'longDistanceHarvester') ? false : true;
                             var boolNoContainers = (this.memory.role == 'lorry') ? true : false;
                             result = this.storeEnergy(boolIncludeSpawner, boolNoContainers, target)
@@ -605,186 +488,4 @@ module.exports = function () {
         }
         return false;
     }
-
-    /**
-    * Utility function turning a direction constant into a dx/dy difference.
-    */
-    //const directionToDxDy = function (dir) {
-    //    switch (dir) {
-    //        case TOP:
-    //            return [0, -1];
-    //        case TOP_RIGHT:
-    //            return [1, -1];
-    //        case RIGHT:
-    //            return [1, 0];
-    //        case BOTTOM_RIGHT:
-    //            return [1, 1];
-    //        case BOTTOM:
-    //            return [0, 1];
-    //        case BOTTOM_LEFT:
-    //            return [-1, 1];
-    //        case LEFT:
-    //            return [-1, 0];
-    //        case TOP_LEFT:
-    //            return [-1, -1];
-    //        default:
-    //            return null;
-    //    }
-    //}
-
-    /**
-     * Utility function turning a dx/dy difference into a direction constant.
-     *
-     * Note: ignores magnitude of arguments, and only looks at sign.
-     */
-    //const dxDyToDirection = function (dx, dy) {
-    //    if (dx < 0) {
-    //        if (dy < 0) {
-    //            return TOP_LEFT;
-    //        } else if (dy > 0) {
-    //            return BOTTOM_LEFT;
-    //        } else {
-    //            return LEFT;
-    //        }
-    //    } else if (dx > 0) {
-    //        if (dy < 0) {
-    //            return TOP_RIGHT;
-    //        } else if (dy > 0) {
-    //            return BOTTOM_RIGHT;
-    //        } else {
-    //            return RIGHT;
-    //        }
-    //    } else {
-    //        if (dy < 0) {
-    //            return TOP;
-    //        } else if (dy > 0) {
-    //            return BOTTOM;
-    //        } else {
-    //            // both dx and dy are 0!
-    //            return null;
-    //        }
-    //    }
-    //}
-
-    /**
-    * Searches for a path using PathFinder and the given opts, turns the path into a Room.findPath-compatible
-    * serialized result, and returns that result.
-    *
-    * Please ensure that all arguments have been validated when passing in, and that targetPos is a raw position
-    * (not a RoomObject with a pos property).
-    */
-    /*const findPathPathFinder = function (originPos, targetPos, options) {
-        const result = PathFinder.search(
-            originPos,
-            {
-                pos: targetPos,
-                range: 'range' in options ? options.range : 1,
-            },
-            options
-        );
-
-        const path = result.path;
-        var resultStringArray = []; // it's faster to use [...].join('') than to continuously add to a string.
-        var roomToConvert = originPos.roomName;
-
-        if (path.length < 1) {
-            return '';
-        }
-
-        // The serialized format starts with the second position's x and y values, then the direction from the
-        // first pos to second, then direction from second to third, etc.
-
-        if (path[0].x > 9) {
-            resultStringArray.push(path[0].x);
-        } else {
-            resultStringArray.push(0, path[0].x); // 0-pad
-        }
-        if (path[0].y > 9) {
-            resultStringArray.push(path[0].y);
-        } else {
-            resultStringArray.push(0, path[0].y); // 0-pad
-        }
-
-        var last_x = originPos.x;
-        var last_y = originPos.y;
-        var pos, dx, dy, dir;
-        for (var i = 0; i < path.length; i++) {
-            pos = path[i];
-            dx = pos.x - last_x;
-            dy = pos.y - last_y;
-            if (dx === -49) {
-                dx = 1;
-            } else if (dx === 49) {
-                dx = -1;
-            }
-            if (dy === -49) {
-                dy = 1;
-            } else if (dy === 49) {
-                dy = -1;
-            }
-
-            resultStringArray.push(dxDyToDirection(dx, dy));
-            if (pos.roomName != roomToConvert) {
-                break;
-            }
-            last_x = pos.x;
-            last_y = pos.y;
-        }
-        return resultStringArray.join('');
-    }
-
-    Creep.prototype.defaultMoveByPath = Creep.prototype.moveByPath;
-    */
-
-    /**
-     * Version of moveByPath, built to read raw serialized path strings without deserializing.
-     *
-     * If passed a non-string argument, this will just invoke the default moveByPath code.
-     *
-     * When passed a string, it should behave identically to the default moveByPath, but hopefully slightly faster.
-     */
-    /*Creep.prototype.moveByPath = function (path) {
-        if (!_.isString(path)) {
-            //console.log(this.name);
-            return this.defaultMoveByPath(path);
-        }
-        var path_len = path.length;
-        if (path_len < 5) {
-            return ERR_NO_PATH;
-        }
-        var my_x = this.pos.x, my_y = this.pos.y;
-        var x_to_check = +path.slice(0, 2);
-        var y_to_check = +path.slice(2, 4);
-        var dir, dxdy;
-        // The path serialization format basically starts with the second position x, second position y, and then
-        // follows with a list of directions *to get to each position*. To clarify, the first direction, at idx=4,
-        // gives the direction *from the first position to the second position*. So, to find the first position,
-        // we subtract that! I do think this is actually more performant than trying to do any more complicated
-        // logic in the loop.
-        dxdy = directionToDxDy(+path[4]);
-        x_to_check -= dxdy[0];
-        y_to_check -= dxdy[1];
-        // Since we start at 4 again, we'll be re-adding what we just subtracted above - this lets us check both the
-        // first and second positions correctly!
-        for (var idx = 4; idx < path_len; idx++) {
-            // Essentially at this point, *_to_check represent the point reached by the *last* movement (the pos
-            // reached by the movement at (idx - 1) since idx just got incremented at the start of this loop)
-            // Also, if this is the first iteration and x/y_to_check match the first pos, idx is at 4, the fifth
-            // pos, directly after the initial x/y, and also the first direction to go!
-            if (x_to_check === my_x && y_to_check == my_y) {
-                dir = +path[idx];
-                return this.move(dir);
-            }
-            dxdy = directionToDxDy(+path[idx]);
-            if (dxdy === null) {
-                return ERR_INVALID_ARGS;
-            }
-            x_to_check += dxdy[0];
-            y_to_check += dxdy[1];
-        }
-        return ERR_NOT_FOUND;
-    }*/
-
-
-
 };
