@@ -25,6 +25,7 @@ module.exports = function () {
             if (this.memory.target != undefined && this.room.name != this.memory.target) {
                 let exit = this.room.findExitTo(this.memory.target);
                 this.moveToTest(this.pos.findClosestByRange(exit));
+                //this.moveFromRoomEdge();
                 return true;
             }
             else if (this.memory.target == undefined && this.memory.homePos != undefined) {

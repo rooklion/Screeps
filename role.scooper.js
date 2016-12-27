@@ -1,10 +1,11 @@
 
 module.exports = {
     run: function (creep) {
-        if (!(creep.manageRoomTarget())) {
-            let result = creep.handleMovementCodes(creep.checkMovement());
 
-            if (result != -200) {
+        let result = creep.handleMovementCodes(creep.checkMovement());
+
+        if (result != -200) {
+            if (!(creep.manageRoomTarget())) {
 
                 var boolIdle = false;
 
@@ -20,6 +21,7 @@ module.exports = {
                 else {
                     let resource = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
                     if (resource) {
+
                         creep.memory.objectTarget = resource.id;
                         creep.memory.objectAction = 'pickup';
                         if (creep.pickup(resource) == ERR_NOT_IN_RANGE) {

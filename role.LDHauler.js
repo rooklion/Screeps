@@ -48,7 +48,7 @@ module.exports = {
                     //let container = Game.getObjectById(creep.memory.container);
                     if (creep.room.name == container.pos.roomName) {
                         let resources = creep.room.find(FIND_DROPPED_RESOURCES);
-                        if (container == undefined || (resources.length > 0 && container.energy < container.energyCapacity / 2)) {
+                        if (container == undefined || (resources.length > 0 && _.sum(container.store) < container.storeCapacity / 2)) {
                             roleScooper.run(creep);
                             return;
                         } else {

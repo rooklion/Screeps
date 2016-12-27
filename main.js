@@ -322,10 +322,68 @@ module.exports.loop = function () {
 
 
 	//Logic for creating Long Distance Miners, Haulers, and Builders
+
+
+
 	for (let index in spawn.room.memory.LDMineTargets) {
 		let room = spawn.room.memory.LDMineTargets[index];
 		if (!(Memory.CTA[room])) {
+			//if this variable starts showing up undefined, we need visibility when this is run
+			let targetRoom = Game.rooms[room];
+
 			if (Memory.roomVisibilities.indexOf(room) > -1) {
+				//clear old containers
+				/*if (targetRoom.memory.containers == undefined) {
+					targetRoom.memory.containers = {};
+				}
+				for (let index in targetRoom.memory.containers) {
+					let container = Game.getObjectById(targetRoom.memory.containers[index]);
+					if (container == undefined) {
+						delete targetRoom.memory.containers[index];
+					}
+				}
+
+				if (targetRoom.memory.conSites.changed) {
+					targetRoom.memory.conSites.changed = false;
+					console.log("Num of consites changed.  Recalculating paths.");
+					opts = {};
+					opts.roomCallback = function (roomName) {
+
+						let room = Game.rooms[roomName];
+						if (!room) return;
+						let costs = new PathFinder.CostMatrix;
+
+						room.find(FIND_STRUCTURES).forEach(function (structure) {
+							if (structure.structureType === STRUCTURE_ROAD) {
+								// Favor roads over plain tiles
+								costs.set(structure.pos.x, structure.pos.y, 1);
+							} else if (structure.structureType !== STRUCTURE_CONTAINER &&
+									   (structure.structureType !== STRUCTURE_RAMPART ||
+										!structure.my)) {
+								// Can't walk through non-walkable buildings
+								costs.set(structure.pos.x, structure.pos.y, 0xff);
+							}
+						});
+						return costs;
+					}
+					targetRoom.memory.containers = {};
+					let containers = Game.rooms[room].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
+					for (let c in containers) {
+					//console.log(JSON.stringify(targetRoom.memory.containers));
+					//for (let c in targetRoom.memory.containers) {
+						let container = containers[c];
+						targetRoom.memory.containers[container.id] = {};
+						let results = PathFinder.search(spawn.room.storage ? spawn.room.storage.pos : spawn.pos, container.pos, opts);
+						let costs = results.cost * 2;
+						costs += 2;
+						let energyHarvDuringTravel = costs * 10;
+						//console.log(energyHarvDuringTravel);
+						let energyForHauler = energyHarvDuringTravel / 100 * 150;
+						console.log(energyForHauler);
+						targetRoom.memory.containers[container.id].energyForHauler = energyForHauler;
+					}
+				}*/
+
 				//let remoteCreeps = Game.rooms[room].find(FIND_MY_CREEPS);
 				//let sources = Game.rooms[room].getSources();
 				let sources = Game.rooms[room].find(FIND_SOURCES);
@@ -380,8 +438,14 @@ module.exports.loop = function () {
 									//let container = Game.getObjectById(containers[c].id);
 									let container = containers[c];
 									//check if we don't have Haulers spawned for each container
+
+									//calculate number of needed Haulers
+
 									if (!_.some(Game.creeps, (c) => c.memory.role == "LDHauler" && c.memory.container == container.id)) {
-										name = spawn.createLDHauler(containers[c].id, spawn.room.storage ? spawn.room.storage.pos : spawn.pos);
+										//console.log(targetRoom.memory.containers[container.id].energyForHauler);
+										//name = spawn.createLDHauler(targetRoom.memory.containers[container.id].energyForHauler, container.id, spawn.room.storage ? spawn.room.storage.pos : spawn.pos);
+										name = spawn.createLDHauler(1100, container.id, spawn.room.storage ? spawn.room.storage.pos : spawn.pos);
+
 									}
 								}
 							}
@@ -399,12 +463,13 @@ module.exports.loop = function () {
 	if (name == undefined) {
 		for (let r in Memory.CTA) {
 			let CTA = Memory.CTA[r];
-			if (CTA.ticks <= 0) {
-				let vision = _.filter(Game.creeps, (c) => c.memory.role == 'vision' && c.memory.target == r);
-
-				if (vision.length == 0) {
-					name = spawn.createVision(r);
-					break;
+			if (spawn.room.memory.LDMineTargets) {
+				if (CTA.ticks <= 0 && spawn.room.memory.LDMineTargets.indexOf(r) != -1) {
+					let vision = _.filter(Game.creeps, (c) => c.memory.role == 'vision' && c.memory.target == r);
+					if (vision.length == 0) {
+						name = spawn.createVision(r);
+						break;
+					}
 				}
 			}
 		}

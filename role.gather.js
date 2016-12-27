@@ -3,9 +3,9 @@ var roleScooper = require('role.scooper');
 
 module.exports = {
     run: function (creep) {
-        if (!(creep.manageRoomTarget())) {
-            let result = creep.handleMovementCodes(creep.checkMovement());
-            if (result != -200) {
+        let result = creep.handleMovementCodes(creep.checkMovement());
+        if (result != -200) {
+            if (!(creep.manageRoomTarget())) {
                 creep.manageState();
                 if (creep.memory.working == true) {
                     if (creep.room.storage) {
@@ -47,6 +47,6 @@ module.exports = {
                     }
                 }
             }
-	    }
-	}
+        }
+    }
 };

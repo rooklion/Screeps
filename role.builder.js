@@ -31,6 +31,16 @@ module.exports = {
                 if (creep.memory.working == true) {
                     //find all conSites
                     var conSites = creep.room.find(FIND_CONSTRUCTION_SITES);
+                    if (creep.room.memory.conSites == undefined) {
+                        creep.room.memory.conSites = {}
+                    }
+                    creep.room.memory.conSites.new = conSites.length;
+                    if (creep.room.memory.conSites.new != creep.room.memory.conSites.old) {
+                        creep.room.memory.conSites.changed = true;
+                    } else {
+                        creep.room.memory.conSites.changed = false;
+                    }
+                    creep.room.memory.conSites.old = creep.room.memory.conSites.new;
 
                     //first we want to build containers first.  This is crucial to mining being started or restored
                     var conSites_container  = _.filter(conSites, (cs) => cs.structureType == STRUCTURE_CONTAINER);
