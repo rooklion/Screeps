@@ -4,8 +4,9 @@ var roleCTARefuge = require('role.CTARefuge')
 
 module.exports = {
     run: function (creep) {
-        if (!Memory.CTA[creep.memory.target]) {
-            if (creep.room.name == creep.room.target) {
+        let container = Game.getObjectById(creep.memory.container);
+        if (!Memory.CTA[container.pos.roomName]) {
+            if (creep.room.name == container.pos.roomName) {
                 let hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
                 if (hostiles.length > 0) {
                     roleCTARefuge.callCTA(creep.room.name, hostiles);
