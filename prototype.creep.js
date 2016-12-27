@@ -495,16 +495,25 @@ module.exports = function () {
                             break;
 
                         case 'mine':
-                               result = this.harvest(target);
-                               if (result == OK) {
-                                   result = HARVEST_OK;
-                               }
+                            let container = Game.getObjectById(this.memory.containerId);
+                            if (this.pos.isEqualTo(container)) {
+                                result = this.harvest(target);
+                                if (result == OK) {
+                                    result = HARVEST_OK;
+                                }
+                            }
+                            else {
+                                this.moveToTest(container, { range: 0 });
+                            }
+
                             break;
 
                         case 'repair':
-                            result = this.repair(target);
-                            if (result == OK) {
-                                result = REPAIR_OK;
+                            if (target.hits < target.hitsMax) {
+                                result = this.repair(target);
+                                if (result == OK) {
+                                    result = REPAIR_OK;
+                                }
                             }
                             break;
 
