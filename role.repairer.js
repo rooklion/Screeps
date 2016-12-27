@@ -5,7 +5,7 @@ module.exports = {
     run: function (creep) {
         if (!(creep.manageRoomTarget())) {
             let result = creep.handleMovementCodes(creep.checkMovement());
-            if (result != -200) {
+            if (result != -200 && result != -201) {
                 creep.manageState();
                 if (creep.memory.working == true) {
                     var structures = creep.room.find(FIND_STRUCTURES,
