@@ -3,7 +3,7 @@ var roleCTARefuge = require('role.CTARefuge')
 
 module.exports = {
     run: function (creep) {
-        if (Memory.CTA[creep.room.name])
+        if (Memory.CTA[creep.room.name]) {
             creep.memory.role = 'CTARefuge';
             delete creep.memory._move;
             delete creep.memory.objectTarget;
