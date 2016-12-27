@@ -42,13 +42,14 @@ module.exports = {
                                     && !e.pos.isNearTo(lowerFlag.pos.x, lowerFlag.pos.y)
                                 );
                             } else {
-                                let lowerFlag = _.filter(Game.flags, (f) =>
+                                let upperFlag = _.filter(Game.flags, (f) =>
                                     f.room.name == creep.room.name
                                     && f.color == COLOR_YELLOW
-                                    && f.secondaryColor == creep.memory.flag.secondaryColor - 1
+                                    && f.secondaryColor == creep.memory.flag.secondaryColor + 1
                                 )[0];
                                 creep.memory.depositTargets = _.filter(roomExtensions, (e) =>
                                     e.pos.isNearTo(creep.memory.flag.pos.x, creep.memory.flag.pos.y)
+                                    && e.pos.isNearTo(upperFlag.pos.x, upperFlag.pos.y)
                                 );
                             }
                         }
@@ -62,7 +63,7 @@ module.exports = {
                         }
                     } else {
                         if (creep.memory.withdrawTargets == undefined) {
-                            console.log('test');
+                            //console.log('test');
                             //let myFlag = Game.getObjectById(creep.memory.flag.id);
                             let lowerFlag = _.filter(Game.flags, (f) =>
                                 f.room.name == creep.room.name
@@ -79,8 +80,14 @@ module.exports = {
                                 );
 
                             } else {
+                                let upperFlag = _.filter(Game.flags, (f) =>
+                                    f.room.name == creep.room.name
+                                    && f.color == COLOR_YELLOW
+                                    && f.secondaryColor == creep.memory.flag.secondaryColor + 1
+                                )[0];
                                 creep.memory.withdrawTargets = _.filter(roomExtensions, (e) =>
                                     e.pos.isNearTo(creep.memory.flag.pos.x, creep.memory.flag.pos.y)
+                                    && !e.pos.isNearTo(upperFlag.pos.x, upperFlag.pos.y)
                                 );
                             }
                         }
