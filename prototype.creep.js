@@ -495,15 +495,10 @@ module.exports = function () {
                             break;
 
                         case 'mine':
-                            let container = Game.getObjectById(this.memory.containerId);
-                            if (this.pos.isEqualTo(container)) {
                                result = this.harvest(target);
                                if (result == OK) {
                                    result = HARVEST_OK;
                                }
-                            } else {
-                                this.moveToTest(container.pos, { range: 0 });
-                            }
                             break;
 
                         case 'repair':

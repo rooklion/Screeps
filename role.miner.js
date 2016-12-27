@@ -3,10 +3,11 @@ require('prototype.creep')();
 module.exports = {
     run: function (creep) {
         //if (!(creep.manageRoomTarget())) {
-            let result = creep.handleMovementCodes(creep.checkMovement());
+        let r = creep.checkMovement();
+        let result = creep.handleMovementCodes(r);
             if (result != -200 && result != -203) {
                 let source = Game.getObjectById(creep.memory.sourceId);
-                creep.memory.objectTarget = source.id;
+                creep.memory.objectTarget = creep.memory.sourceId;
                 creep.memory.objectAction = 'mine';
                 if (creep.memory.containerId == undefined) {
                     let container = source.pos.findInRange(FIND_STRUCTURES, 1, {
@@ -20,7 +21,9 @@ module.exports = {
                 }
                 else {
                     //creep.moveTo(container);
-                    creep.moveToTest(container.pos, { range: 0 });
+                    if (container != undefined) {
+                        creep.moveToTest(container.pos, { range: 0 });
+                    }
                 }
             }
         //}

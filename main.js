@@ -235,10 +235,12 @@ module.exports.loop = function () {
 		let target = roomTargets[index];
 		//if this room is in the visibilities list, otherwise .find will return an error
 		if (Memory.roomVisibilities.indexOf(target) != -1) {
-			let roads = Game.rooms[target].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD);
+			let roads = Game.rooms[target].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD || s.structureType == STRUCTURE_CONTAINER);
 			//iterate through the roads to find one in need of health
+			//console.log("start");
 			for (let r of roads) {
 				//if the health is below a given percentage (50% at the moment)
+				//console.log(r.hits / r.hitsMax);
 				if ((r.hits / r.hitsMax) <= 0.5) {
 					//find out if there is already an emergency repairer spawned for this room
 					if (!_.some(_.filter(Game.creeps, (c) => c.memory.role == 'repairer' && c.memory.target == target))) {
