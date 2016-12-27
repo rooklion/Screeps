@@ -1,7 +1,26 @@
 require('prototype.creep')();
+var roleCTARefuge = require('role.CTARefuge')
 
 module.exports = {
     run: function (creep) {
+        let source = Game.getObjectById(creep.memory.sourceId);
+        if (!Memory.CTA[source.room.name]) {
+            if (creep.room.name == source.room.name) {
+                let hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+                if (hostiles.length > 0) {
+                    roleCTARefuge.callCTA(creep.room.name, hostiles);
+                    roleCTARefuge.run(creep);
+                    return;
+                }
+            }
+        } else {
+            creep.memory.role = 'CTARefuge';
+            delete creep.memory._move;
+            delete creep.memory.objectTarget;
+            delete creep.memory.objectAction;
+            roleCTARefuge.run(creep);
+            return;
+        }
         //if (!(creep.manageRoomTarget())) {
         let r = creep.checkMovement();
         let result = creep.handleMovementCodes(r);
