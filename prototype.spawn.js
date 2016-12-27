@@ -3,6 +3,9 @@ module.exports = function () {
         function (energy, roleName, target) {
             var energyUsed = 0;
             var numParts = Math.floor(energy / 250);
+            if (numParts > 12) {
+                numParts = 12;
+            }
             var body = [];
             for (let i = 0; i < numParts; i++) {
                 body.push(WORK);
@@ -17,14 +20,22 @@ module.exports = function () {
                 body.push(MOVE);
                 energyUsed += 50;
             }
-
-            return this.createCreep(body, undefined, {
+            let result = this.createCreep(body, undefined, {
                 role: roleName,
                 energyUsed: energyUsed,
                 working: false,
                 target: target,
                 homePos: this.pos
             });
+
+            // return this.createCreep(body, undefined, {
+            //     role: roleName,
+            //     energyUsed: energyUsed,
+            //     working: false,
+            //     target: target,
+            //     homePos: this.pos
+            // });
+            return result;
         };
 
     StructureSpawn.prototype.createRepairer =
@@ -53,6 +64,9 @@ module.exports = function () {
         function (energy, target) {
             var energyUsed = 0;
             var numParts = Math.floor(energy / 250);
+            if (numParts > 12) {
+                numParts = 12;
+            }
             var body = [];
             for (let i = 0; i < numParts; i++) {
                 body.push(WORK);
