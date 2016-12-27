@@ -30,7 +30,7 @@ var tickCounter = 0;
 
 //profiler.enable();
 module.exports.loop = function () {
-	profiler.wrap(function() {
+	//profiler.wrap(function() {
 
 		//use PathFinder for better moving
 		PathFinder.use(true);
@@ -178,6 +178,7 @@ module.exports.loop = function () {
 
 			thisRoom.name = spawn.room.name;
 			myRooms[thisRoom.name] = thisRoom;
+
 			//myRooms[thisRoom.name].name = thisRoom.name;
 			//console.log(myRooms[thisRoom.name].name);
 
@@ -224,29 +225,30 @@ module.exports.loop = function () {
 			//console.log("new target: " + creep.memory.target);
 		}
 	}
-	spawn.room.memory.LDMineTargets.forEach( function(room) {
-		if (roomTargets.indexOf(room) == -1) {
-			roomTargets.push(room);
-		}
-	});
+	if (spawn.room.memory.LDMineTargets != undefined) {
+		spawn.room.memory.LDMineTargets.forEach( function(room) {
+			if (roomTargets.indexOf(room) == -1) {
+				roomTargets.push(room);
+			}
+		});
+	}
 
 	//iterate through the room targets
 	for (let index in roomTargets) {
 		let target = roomTargets[index];
 		//if this room is in the visibilities list, otherwise .find will return an error
-		if (Memory.roomVisibilities.indexOf(target) != -1) {
-			let roads = Game.rooms[target].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD || s.structureType == STRUCTURE_CONTAINER);
-			//iterate through the roads to find one in need of health
+		if ((Memory.roomVisibilities.indexOf(target) != -1) && !Memory.CTA[target]) {
+			let structures = Game.rooms[target].find(FIND_STRUCTURES, (s) => s.structureType == STRUCTURE_ROAD || s.structureType == STRUCTURE_CONTAINER);
+			//iterate through the structures to find one in need of health
 			//console.log("start");
-			for (let r of roads) {
+			for (let s of structures) {
 				//if the health is below a given percentage (50% at the moment)
 				//console.log(r.hits / r.hitsMax);
-				if ((r.hits / r.hitsMax) <= 0.5) {
+				if ((s.hits / s.hitsMax) <= 0.5) {
 					//find out if there is already an emergency repairer spawned for this room
 					if (!_.some(_.filter(Game.creeps, (c) => c.memory.role == 'repairer' && c.memory.target == target))) {
 						//no repairer found, create one
 						name = spawn.createEmergencyRepairer(energy, target);
-						//console.log(name);
 						//is it successful?
 						if (_.isString(name) && Game.creeps[name] != undefined) {
 							console.log("Sending emergency repairer to : " + target);
@@ -268,6 +270,7 @@ module.exports.loop = function () {
 		//repairer was spawned, exit iteration for this spawn and move to the next one
 		continue;
 	}
+
 
 	if (thisRoom.numberOfHarvesters == 0 && (thisRoom.numberOfMiners == 0 || thisRoom.numberOfLorries == 0)) {
 		if (thisRoom.numberOfMiners > 0) {
@@ -414,7 +417,6 @@ module.exports.loop = function () {
 			delete spawn.memory.claimTarget;
 		}
 	}
-
 	//check for need of reserver creeps
 	if (name == undefined) {
 		let LDH = _.filter(Game.creeps, (c) => c.memory.role == 'longDistanceHarvester' && c.memory.homePos.roomName == spawn.room.name);
@@ -425,25 +427,29 @@ module.exports.loop = function () {
 			}
 		}
 	}
-
 	if (name == undefined) {
 		let LDHaulers = _.filter(Game.creeps, (c) => c.memory.role == 'LDHauler' && c.memory.homePos.roomName == spawn.room.name );
 		LDHaulers.forEach(function (c) {
 			let container = Game.getObjectById(c.memory.container);
 			if (!(_.some(Game.creeps, (c) => c.memory.role == 'reserver' && c.memory.target == container.pos.roomName))) {
-				name = spawn.createReserver(container.pos.roomName);
+				if (name == undefined) {
+					name = spawn.createReserver(container.pos.roomName);
+				}
 			}
 		});
 	}
+
 
 	//if we created a reserver, we don't need anything else
 	if (name == undefined) {
 		if (thisRoom.numberOfHarvesters < spawn.memory.minHarv) {
 			name = spawn.createCustomCreep(energy, 'harvester');
+
 		}
 		// have as many lorries as we have miners.  Removes need for min number setting?!
 		else if (thisRoom.numberOfLorries < spawn.memory.minLor || thisRoom.numberOfLorries < thisRoom.numberOfMiners) {
 			name = spawn.createCarry(300, 'lorry');
+
 		}
 		else if (spawn.memory.claimRoom != undefined) {
 			name = spawn.createClaimer(spawn.memory.claimRoom);
@@ -453,7 +459,9 @@ module.exports.loop = function () {
 		}
 
 		else if (thisRoom.numberOfUpgraders < spawn.memory.minUpg) {
-			name = spawn.createCustomCreep(energy, 'upgrader');
+			name = spawn.createCustomCreep(energy, 'upgrader', undefined);
+			//console.log(name);
+			//console.log(energy);
 		}
 	}
 
@@ -478,7 +486,6 @@ module.exports.loop = function () {
 			break;
 		}
 	}
-
 
 
 	//break to check for build on demand creeps before doing anything else
@@ -602,6 +609,7 @@ module.exports.loop = function () {
 	}
 	tickCounter += 1;
 	if (tickCounter == 20 || boolTriggerReport) {
+
 		for (let roomName in myRooms) {
 			let r = myRooms[roomName];
 			console.log("(" + r.name + ") "
@@ -621,5 +629,5 @@ module.exports.loop = function () {
 }
 
 
-});  //end profiler wrap
+//});  //end profiler wrap
 }
