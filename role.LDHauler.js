@@ -45,7 +45,7 @@ module.exports = {
                     }
                 }
                 else {
-                    let container = Game.getObjectById(creep.memory.container);
+                    //let container = Game.getObjectById(creep.memory.container);
                     if (creep.room.name == container.pos.roomName) {
                         let resources = creep.room.find(FIND_DROPPED_RESOURCES);
                         if (container == undefined || (resources.length > 0 && container.energy < container.energyCapacity / 2)) {
