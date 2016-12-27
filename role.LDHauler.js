@@ -29,15 +29,35 @@ module.exports = {
                 creep.manageState();
                 if (creep.memory.working == true) {
                     if (creep.room.name == creep.memory.homePos.roomName) {
-                        if (creep.room.storage) {
-                            creep.memory.objectTarget = creep.room.storage.id;
-                            creep.memory.objectAction = 'storeResources';
-                            if (creep.storeResources(creep.room.storage) == false) {
-                                creep.moveToTest(creep.room.storage, { range: 1 });
+                        // if (creep.room.storage) {
+                        //     creep.memory.objectTarget = creep.room.storage.id;
+                        //     creep.memory.objectAction = 'storeResources';
+                        //     if (creep.storeResources(creep.room.storage) == false) {
+                        //         creep.moveToTest(creep.room.storage, { range: 1 });
+                        //     }
+                        // } else {
+                        //     //if there is no storage, just deposit anywhere.  This is not ideal though...
+                        //     creep.storeEnergy(true);
+                        // }
+                        let containers = creep.room.find(FIND_STRUCTURES, {
+                            filter: (s) => ((s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE)
+                            && _.sum(s.store) < s.storeCapacity)
+                            || (s.structureType == STRUCTURE_LINK && s.energy < s.energyCapacity && s.memory.type == 'remote')
+                        });
+                        //containers = links.concat(containers);
+                        let container = creep.findClosestByPathFinder(containers, { range: 1 });
+
+                        if (container != undefined) {
+                            creep.memory.objectTarget = container.id;
+                            creep.memory.objectAction = 'store';
+                            let result = creep.transfer(container, RESOURCE_ENERGY);
+                            if (result == ERR_NOT_IN_RANGE) {
+                                creep.moveToTest(container, { range: 1 });
+                            } else if (result == ERR_FULL) {
+                                delete this.memory.objectTarget;
+                                delete this.memory.objectAction;
+                                delete this.memory._move;
                             }
-                        } else {
-                            //if there is no storage, just deposit anywhere.  This is not ideal though...
-                            creep.storeEnergy(true);
                         }
                     } else {
                         let homePos = new RoomPosition(creep.memory.homePos.x, creep.memory.homePos.y, creep.memory.homePos.roomName);

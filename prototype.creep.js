@@ -393,10 +393,12 @@ module.exports = function () {
                             break;
 
                         case 'repair':
-                            if (target.hits < target.hitsMax) {
-                                result = this.repair(target);
-                                if (result == OK) {
-                                    result = REPAIR_OK;
+                            if (target != undefined) {
+                                if (target.hits < target.hitsMax) {
+                                    result = this.repair(target);
+                                    if (result == OK) {
+                                        result = REPAIR_OK;
+                                    }
                                 }
                             }
                             break;

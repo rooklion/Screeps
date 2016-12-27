@@ -18,6 +18,7 @@ var roleReserver = require('role.reserver');
 var roleCTARefuge = require('role.CTARefuge');
 var roleLDHauler = require('role.LDHauler');
 var roleExtCreep = require('role.extCreep');
+var roleDismantler = require('role.dismantler');
 
 
 
@@ -132,6 +133,9 @@ module.exports.loop = function () {
 			else if (creep.memory.role == 'extcreep') {
 				roleExtCreep.run(creep);
 			}
+			else if (creep.memory.role == 'dismantler') {
+				roleDismantler.run(creep);
+			}
 		}
 
 		if (Memory.creepNeedsHeal.length > 0) {
@@ -157,6 +161,9 @@ module.exports.loop = function () {
 		var thisRoom = {};
 
 		for (let spawnName in Game.spawns) {
+			if (spawnName == "Spawn4") {
+				continue; //hacking out this spawn for now.  Need to redesign to stop double spawning
+			}
 			thisRoom = {};
 			let spawn = Game.spawns[spawnName];
 
@@ -187,10 +194,12 @@ module.exports.loop = function () {
 			//count the number of creeps with each role
 			thisRoom.numberOfHarvesters = _.sum(creepsInRoom, (c) => c.memory.role == 'harvester');
 			thisRoom.numberOfUpgraders = _.sum(creepsInRoom, (c) => c.memory.role == 'upgrader');
-			thisRoom.numberOfBuilders = _.sum(creepsInRoom, (c) => c.memory.role == 'builder');
+			thisRoom.numberOfBuilders = _.sum(creepsInRoom, (c) => c.memory.role == 'builder'
+				&& c.memory.target == undefined);  //consider checking if target is this room
 			thisRoom.numberOfRepairers = _.sum(creepsInRoom, (c) => c.memory.role == 'repairer');
 			thisRoom.numberOfWallRepairers = _.sum(creepsInRoom, (c) => c.memory.role == 'wallRepairer');
-			thisRoom.numberOfMiners = _.sum(creepsInRoom, (c) => c.memory.role == 'miner');
+			thisRoom.numberOfMiners = _.sum(creepsInRoom, (c) => c.memory.role == 'miner'
+				&& Game.getObjectById(c.memory.sourceId).pos.roomName == spawn.room.name); //real function needed?
 			thisRoom.numberOfLorries = _.sum(creepsInRoom, (c) => c.memory.role == 'lorry');
 			thisRoom.numberOfScoopers = _.sum(creepsInRoom, (c) => c.memory.role == 'scooper');
 			thisRoom.numberOfGatherers = _.sum(creepsInRoom, (c) => c.memory.role == 'gather');
@@ -198,11 +207,12 @@ module.exports.loop = function () {
 			thisRoom.numberOfLongDistanceHarvestersW8N2 = _.sum(Game.creeps, (c) =>
 			c.memory.role == 'longDistanceHarvester'
 			&& c.memory.target == 'W8N2'
-		);
-		thisRoom.numberOfLongDistanceHarvestersW7N3 = _.sum(Game.creeps, (c) =>
-		c.memory.role == 'longDistanceHarvester'
-		&& c.memory.target == 'W7N3'
-	);
+			);
+			thisRoom.numberOfLongDistanceHarvestersW7N3 = _.sum(Game.creeps, (c) =>
+			c.memory.role == 'longDistanceHarvester'
+			&& c.memory.target == 'W7N3'
+			);
+			thisRoom.numberOfDismantlers = _.sum(creepsInRoom, (c) => c.memory.role == 'dismantler');
 
 
 	var name = undefined;
@@ -579,6 +589,16 @@ module.exports.loop = function () {
 						name = spawn.createBuilder();
 					} else {
 						name = spawn.createCustomCreep(spawn.room.energyCapacityAvailable, 'builder');
+					}
+				} else {
+					//if any dismantle flags and no dismantler, spawn one
+					let disFlags = _.filter(Game.flags, (f) =>
+	                    f.pos.roomName == spawn.room.name
+	                    && f.color == COLOR_RED
+	                    && f.secondaryColor == COLOR_RED
+	                );
+					if (disFlags.length > 0 && thisRoom.numberOfDismantlers < 1) {
+						name = spawn.createCustomCreep(energy, 'dismantler');
 					}
 				}
 			}
