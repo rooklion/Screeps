@@ -4,6 +4,8 @@ module.exports = {
     run: function (creep) {
         if (!creep.memory.homePos) {
             console.log(creep.name + " CTA refuge does not have a home!!!");
+            creep.memory.homePos = Game.spawns.Spawn1.pos;
+            return;
         }
         if (creep.checkMovement() != -200) {
             //let spawns = _.filter(Game.spawns, (s) => s.room.name == creep.memory.homePos.roomName);

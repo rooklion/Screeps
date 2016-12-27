@@ -17,6 +17,7 @@ var roleVision = require('role.vision');
 var roleReserver = require('role.reserver');
 var roleCTARefuge = require('role.CTARefuge');
 var roleLDHauler = require('role.LDHauler');
+var roleExtCreep = require('role.extCreep');
 
 
 
@@ -127,6 +128,9 @@ module.exports.loop = function () {
 			}
 			else if (creep.memory.role == 'LDHauler') {
 				roleLDHauler.run(creep);
+			}
+			else if (creep.memory.role == 'extcreep') {
+				roleExtCreep.run(creep);
 			}
 		}
 
@@ -411,7 +415,7 @@ module.exports.loop = function () {
 
 	//check for need of reserver creeps
 	if (name == undefined) {
-		let LDH = _.filter(Game.creeps, (c) => c.memory.role == 'longDistanceHarvester' || c.memory.role == 'LDHauler');
+		let LDH = _.filter(Game.creeps, (c) => c.memory.role == 'longDistanceHarvester' && c.memory.homePos.roomName == spawn.room.name);
 		for (let name in LDH) {
 			if (!(_.some(Game.creeps, (c) => c.memory.role == 'reserver' && c.memory.target == LDH[name].memory.target))) {
 				name = spawn.createReserver(LDH[name].memory.target);
@@ -419,7 +423,18 @@ module.exports.loop = function () {
 			}
 		}
 	}
-	//if we created a claimer, we don't need something else
+
+	if (name == undefined) {
+		let LDHaulers = _.filter(Game.creeps, (c) => c.memory.role == 'LDHauler' && c.memory.homePos.roomName == spawn.room.name );
+		LDHaulers.forEach(function (c) {
+			let container = Game.getObjectById(c.memory.container);
+			if (!(_.some(Game.creeps, (c) => c.memory.role == 'reserver' && c.memory.target == container.pos.roomName))) {
+				name = spawn.createReserver(container.pos.roomName);
+			}
+		});
+	}
+
+	//if we created a reserver, we don't need anything else
 	if (name == undefined) {
 		if (thisRoom.numberOfHarvesters < spawn.memory.minHarv) {
 			name = spawn.createCustomCreep(energy, 'harvester');
@@ -439,6 +454,30 @@ module.exports.loop = function () {
 			name = spawn.createCustomCreep(energy, 'upgrader');
 		}
 	}
+
+	//check for extension flags and create extCreeps for them
+	let extFlags = _.filter(Game.flags, (f) =>
+		f.room.name == spawn.room.name
+		&& f.color == COLOR_YELLOW
+	);
+	//
+	for (let index in extFlags) {
+		let flag = extFlags[index];
+		let creeps = _.filter(creepsInRoom, function(c) {
+			if (c.memory.flag) {
+				if (c.memory.flag.pos.x == flag.pos.x && c.memory.flag.pos.y == flag.pos.y) {
+					return true;
+				}
+			}
+			return false;
+		});
+		if (creeps.length == 0) {
+			name = spawn.createExtCreep(flag);
+			break;
+		}
+	}
+
+
 
 	//break to check for build on demand creeps before doing anything else
 

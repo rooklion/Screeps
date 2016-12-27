@@ -13,6 +13,31 @@ module.exports = function () {
         this.cacheSources();
         //console.log(this.sources);
     }
+
+    Room.prototype.returnLowestEmptyExtFlag =
+    function() {
+        //COLOR_YELLOW is the color for extension flags
+        let roomFlags = _.filter(Game.flags, (f) => f.room.name == this.name && f.color == COLOR_YELLOW);
+        //highest secondary color is COLOR_WHITE == 10
+        let secColor = COLOR_WHITE + 1;
+        let flag = undefined;
+        for (let key in roomFlags) {
+            let f = roomFlags[key];
+            if (f.secondaryColor < secColor) {
+                let creeps = this.lookForAt(LOOK_CREEP, f);
+                if (creep.length < 1) {
+                    flag = f;
+                    secColor = flag.secondaryColor;
+                }
+            }
+
+            if (secColor == COLOR_RED) {
+                //COLOR_RED is the first one
+                break;
+            }
+        }
+        return flag;
+    }
 };
 
 Object.defineProperty(Room.prototype, 'sources', {

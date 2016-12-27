@@ -49,26 +49,29 @@ module.exports = {
                         let resources = creep.room.find(FIND_DROPPED_RESOURCES);
                         if (container == undefined || (resources.length > 0 && container.energy < container.energyCapacity / 2)) {
                             roleScooper.run(creep);
+                            return;
                         } else {
                             creep.memory.objectTarget = container.id;
                             creep.memory.objectAction = 'gatherResource';
-                            if (_.sum(container.store) >= creep.carryCapacity) {
-                                if (creep.pos.isNearTo(container.pos)) {
+
+
+                            if (creep.pos.isNearTo(container.pos)) {
+                                if (_.sum(container.store) >= creep.carryCapacity) {
                                     for (var resourceType in container.store) {
                                         if (_.sum(creep.carry) < creep.carryCapacity) {
                                             creep.withdraw(container, resourceType);
                                         }
                                     }
-                                } else {
-                                    return creep.moveToTest(container.pos, { range: 1 });
                                 }
-                            }
+                        } else {
+                            return creep.moveToTest(container.pos, { range: 1 });
                         }
-                    } else {
-                        creep.moveToTest(container.pos, {range: 1});
                     }
+                } else {
+                    creep.moveToTest(container.pos, {range: 1});
                 }
             }
+        }
         //}
     }
 };

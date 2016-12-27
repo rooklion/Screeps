@@ -22,7 +22,8 @@ module.exports = function () {
                 role: roleName,
                 energyUsed: energyUsed,
                 working: false,
-                target: target
+                target: target,
+                homePos: this.pos
             });
         };
 
@@ -32,7 +33,8 @@ module.exports = function () {
                 role: 'repairer',
                 energyUsed: 500,
                 working: false,
-                target: target
+                target: target,
+                homePos: this.pos
             });
         };
 
@@ -42,7 +44,8 @@ module.exports = function () {
                 role: 'builder',
                 energyUsed: 350,
                 working: false,
-                target: target
+                target: target,
+                homePos: this.pos
             });
         };
 
@@ -69,7 +72,8 @@ module.exports = function () {
                 role: 'repairer',
                 energyUsed: energyUsed,
                 target: target,
-                working: false
+                working: false,
+                homePos: this.pos
             });
         };
 
@@ -110,7 +114,8 @@ module.exports = function () {
         function (target) {
             return this.createCreep([CLAIM, MOVE], undefined, {
                 role: 'claimer',
-                target: target
+                target: target,
+                homePos: this.pos
             })
         }
 
@@ -118,7 +123,8 @@ module.exports = function () {
         function (target) {
             return this.createCreep([CLAIM, CLAIM, MOVE], undefined, {
                 role: 'reserver',
-                target: target
+                target: target,
+                homePos: this.pos
             })
         }
 
@@ -128,7 +134,8 @@ module.exports = function () {
             return this.createCreep([WORK, WORK, WORK, WORK, WORK, MOVE], undefined, {
                 role: 'miner',
                 energyUsed: 550,
-                sourceId: sourceId
+                sourceId: sourceId,
+                homePos: this.pos
             })
         }
 
@@ -151,7 +158,8 @@ module.exports = function () {
                 role: roleName,
                 energyUsed: energyUsed,
                 working: false,
-                target: target
+                target: target,
+                homePos: this.pos
             });
         };
 
@@ -191,5 +199,15 @@ module.exports = function () {
                     homePos: homePos
                 });
             };
+
+            StructureSpawn.prototype.createExtCreep =
+                function (flag) {
+                    return this.createCreep([CARRY, MOVE], undefined, {
+                        role: 'extcreep',
+                        energyUsed: 100,
+                        working: false,
+                        flag: flag
+                    });
+                }
 
 };
